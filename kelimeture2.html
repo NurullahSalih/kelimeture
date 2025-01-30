@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kelime Türetme Oyunu</title>
+    <style>
+        /* Önceki stil tanımları aynı kaldı */
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .container { margin-bottom: 20px; }
+        #letters { font-size: 24px; letter-spacing: 10px; margin: 20px 0; padding: 10px; border: 2px solid #666; }
+        #wordCount { color: #666; margin-bottom: 10px; }
+        input[type="text"] { padding: 10px; font-size: 16px; width: 300px; }
+        #foundWords { height: 150px; width: 100%; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+        #score { font-size: 18px; color: green; }
+        #fileInput { display: none; }
+        .custom-file-upload {
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+            padding: 8px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .warning { color: red; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <label class="custom-file-upload" id="fileUploadLabel" style="display: none;">
+            <input type="file" id="fileInput" accept=".txt">
+            Kelime Listesi Seç (TXT)
+        </label>
+        <div id="warningMessage" class="warning"></div>
+        <h2>Kelime Türetme Oyunu</h2>
+        <div id="wordCount">Toplam Kelime Sayısı: <span id="totalWords">0</span></div>
+        <div>Kullanılabilir Harfler:</div>
+        <div id="letters"></div>
+        <div>Bulunacak Kelime Sayısı: <span id="remaining">0</span></div>
+        <input type="text" id="inputWord" placeholder="Kelimenizi yazıp Enter'a basın" disabled>
+        <div id="score">Puan: 0</div>
+    </div>
+    <div class="container">
+        <h3>Bulunan Kelimeler:</h3>
+        <div id="foundWords"></div>
+    </div>
+
+    <script>
+        const vowels = ['a', 'e', 'ı', 'i', 'o', 'ö', 'u', 'ü'];
+        const consonants = ['b', 'c', 'ç', 'd', 'f', 'g', 'ğ', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'r', 's', 'ş', 't', 'v', 'y', 'z'];
+        
+        let currentLetters = [];
+        let possibleWords = [];
+        let foundWords = [];
+        let score = 0;
+        let wordList = [];
+
+        // Sayfa yüklendiğinde otomatik deneme
+        window.addEventListener('load', async () => {
+            try {
+                // Önce default dosyayı dene
+                const response = await fetch('kelimelistesi.txt');
+                if(!response.ok) throw new Error('Dosya bulunamadı');
+                
+                const data = await response.text();
+                loadWordList(data);
+            } catch (error) {
+                showFileSelector('Varsayılan kelime listesi bulunamadı. Lütfen dosyayı seçin:');
+            }
+        });
+
+        // Dosya seçim işlemi
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    loadWordList(e.target.result);
+                    document.getElementById('warningMessage').textContent = '';
+                } catch(error) {
+                    showError('Dosya okunurken hata oluştu!');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function loadWordList(data) {
+            wordList = data.toLowerCase().split('\n')
+                         .map(word => word.trim())
+                         .filter(word => word.length > 0);
+
+            if(wordList.length === 0) {
+                showFileSelector('Seçilen dosya geçersiz veya boş!');
+                return;
+            }
+
+            document.getElementById('totalWords').textContent = wordList.length;
+            document.getElementById('inputWord').disabled = false;
+            startNewGame();
+        }
+
+        function showFileSelector(message) {
+            document.getElementById('warningMessage').textContent = message;
+            document.getElementById('fileUploadLabel').style.display = 'block';
+            document.getElementById('inputWord').disabled = true;
+        }
+
+        function showError(message) {
+            document.getElementById('warningMessage').textContent = message;
+            document.getElementById('inputWord').disabled = true;
+        }
+
+        // Diğer fonksiyonlar (startNewGame, generateLetters, findPossibleWords vb.) öncekiyle aynı
+        // ... (Önceki kodun geri kalanı aynen kalacak)
+    </script>
+</body>
+</html>

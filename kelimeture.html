@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kelime Türetme Oyunu</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .container { margin-bottom: 20px; }
+        #letters { font-size: 24px; letter-spacing: 10px; margin: 20px 0; padding: 10px; border: 2px solid #666; }
+        #wordCount { color: #666; margin-bottom: 10px; }
+        input[type="text"] { padding: 10px; font-size: 16px; width: 300px; }
+        #foundWords { height: 150px; width: 100%; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+        #score { font-size: 18px; color: green; }
+        #fileInput { display: none; }
+        .custom-file-upload {
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+            padding: 8px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <label class="custom-file-upload">
+            <input type="file" id="fileInput" accept=".txt">
+            Kelime Listesi Seç (TXT)
+        </label>
+        <h2>Kelime Türetme Oyunu</h2>
+        <div id="wordCount">Toplam Kelime Sayısı: <span id="totalWords">0</span></div>
+        <div>Kullanılabilir Harfler:</div>
+        <div id="letters"></div>
+        <div>Bulunacak Kelime Sayısı: <span id="remaining">0</span></div>
+        <input type="text" id="inputWord" placeholder="Kelimenizi yazıp Enter'a basın" disabled>
+        <div id="score">Puan: 0</div>
+    </div>
+    <div class="container">
+        <h3>Bulunan Kelimeler:</h3>
+        <div id="foundWords"></div>
+    </div>
+
+    <script>
+        const vowels = ['a', 'e', 'ı', 'i', 'o', 'ö', 'u', 'ü'];
+        const consonants = ['b', 'c', 'ç', 'd', 'f', 'g', 'ğ', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'r', 's', 'ş', 't', 'v', 'y', 'z'];
+        
+        let currentLetters = [];
+        let possibleWords = [];
+        let foundWords = [];
+        let score = 0;
+        let wordList = [];
+
+        // Dosya seçim işlemi
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            if(file.type !== "text/plain") {
+                alert("Lütfen bir metin dosyası (.txt) seçin!");
+                return;
+            }
+            alert(file.name);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    wordList = e.target.result.toLowerCase().split('\n').map(word => word.trim());
+                    document.getElementById('totalWords').textContent = wordList.length;
+                    document.getElementById('inputWord').disabled = false;
+                    startNewGame();
+                } catch(error) {
+                    alert("Dosya okunurken bir hata oluştu!");
+                }
+            };
+        
+            //file.name='Users/nurullah/Documents/KODLAR/kelimelistesi.txt';
+            reader.readAsText(file);
+        });
+
+        function startNewGame() {
+            currentLetters = generateLetters();
+            possibleWords = findPossibleWords(currentLetters);
+            foundWords = [];
+            score = 0;
+            
+            document.getElementById('letters').textContent = currentLetters.join(' ').toUpperCase();
+            document.getElementById('remaining').textContent = possibleWords.length;
+            document.getElementById('foundWords').textContent = '';
+            document.getElementById('score').textContent = 'Puan: 0';
+            document.getElementById('inputWord').value = '';
+        }
+
+        function generateLetters() {
+            let letters = [];
+            for(let i=0; i<3; i++) {
+                letters.push(vowels[Math.floor(Math.random() * vowels.length)]);
+            }
+            for(let i=0; i<5; i++) {
+                letters.push(consonants[Math.floor(Math.random() * consonants.length)]);
+            }
+            return letters.sort(() => Math.random() - 0.5);
+        }
+
+        function findPossibleWords(letters) {
+            return wordList.filter(word => {
+                if(word.length < 2) return false;
+                const tempLetters = [...letters];
+                return [...word].every(char => {
+                    const index = tempLetters.indexOf(char);
+                    if(index > -1) {
+                        tempLetters.splice(index, 1);
+                        return true;
+                    }
+                    return false;
+                });
+            }).sort((a,b) => b.length - a.length);
+        }
+
+        document.getElementById('inputWord').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                const input = document.getElementById('inputWord').value.toLowerCase().replace(/[^a-zçğıöşü]/g, '');
+                const result = checkWord(input);
+                
+                if(result === 'valid') {
+                    foundWords.push(input);
+                    score += input.length;
+                    document.getElementById('foundWords').textContent = foundWords.join('\n');
+                    document.getElementById('score').textContent = `Puan: ${score}`;
+                    document.getElementById('remaining').textContent = possibleWords.length - foundWords.length;
+                    
+                    if(foundWords.length === possibleWords.length) {
+                        alert('Tebrikler! Tüm kelimeleri buldunuz!\nYeni oyun başlatılıyor...');
+                        startNewGame();
+                    }
+                }
+                document.getElementById('inputWord').value = '';
+            }
+        });
+
+        function checkWord(word) {
+            if(foundWords.includes(word)) return 'already-found';
+            if(!possibleWords.includes(word)) return 'invalid';
+            
+            const tempLetters = [...currentLetters];
+            for(const char of word) {
+                const index = tempLetters.indexOf(char);
+                if(index === -1) return 'invalid-letter';
+                tempLetters.splice(index, 1);
+            }
+            return 'valid';
+        }
+    </script>
+</body>
+</html>
